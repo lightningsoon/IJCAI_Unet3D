@@ -3,10 +3,10 @@ from skimage import measure
 
 
 def preprocess(img):
-    img = np.clip(img, -150, 250)
+    img = np.clip(img, -200, 250)
     min_nrrd_data = np.min(img)
     max_nrrd_data = np.max(img)
-    img = 255 * (img - min_nrrd_data) / (max_nrrd_data - min_nrrd_data)
+    img = (img - min_nrrd_data) / (max_nrrd_data - min_nrrd_data)
     return img
 
 

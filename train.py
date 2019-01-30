@@ -9,6 +9,7 @@ import pynvml
 from data import dataset
 import json
 
+
 class ParallelModelCheckpoint(ModelCheckpoint):
     def __init__(self, model, filepath, monitor='val_loss', verbose=0,
                  save_best_only=False, save_weights_only=False,
@@ -22,11 +23,11 @@ class ParallelModelCheckpoint(ModelCheckpoint):
 
 
 def lr_SCH(epochs, lr):
-    if epochs < 5:
-        lr = 0.01
+    if epochs <= 2:
+        lr = 0.002
     elif epochs != 0 and epochs % 3 == 0:
         # 每一新轮开始时,需要重置
-        lr = 0.001
+        lr = 0.0008
         # print(lr,type(lr))
     else:
         lr = lr * 0.5
@@ -52,7 +53,7 @@ class fitter():
             self.single_m = self.m
             self.m = multi_gpu_model(self.m, num_gpus)
             pass
-        self.m.compile(optimizer=Adam(lr=1e-5),
+        self.m.compile(optimizer=Adam(),
                        loss=dice_coef_loss, metrics=[dice_metric])
 
     def callback_func(self):
@@ -60,35 +61,40 @@ class fitter():
         tensor_bd = TensorBoard(batch_size=2 * num_gpus, write_grads=False, write_images=False, histogram_freq=2)
         # 模型保存
         if self.gpu_nums > 1:
-            mcp = ParallelModelCheckpoint(self.single_m, self.save_path, period=2)
+            mcp = ParallelModelCheckpoint(self.single_m, self.save_path, period=1)
         else:
-            mcp = ModelCheckpoint(self.save_path, period=2)
+            mcp = ModelCheckpoint(self.save_path, period=1)
         # 学习率
         lrp = LearningRateScheduler(lr_SCH, 1)
-        return [tensor_bd, lrp, mcp]
+        return [lrp, mcp,tensor_bd]
         pass
+
     def save_final(self):
-        if self.gpu_nums>1:
+        if self.gpu_nums > 1:
             self.single_m.save_weights(parameters.we_name)
         else:
             self.m.save_weights(parameters.we_name)
 
 
 def train():
-    myfitter = fitter(num_gpus, model_path, save_path, parameters.we_name)
     train_data = dataset(parameters.train_path)
+    #quit()
     val_data = dataset(parameters.validate_path)
+
     train_data.run_thread()
     val_data.run_thread()
-    h=myfitter.m.fit_generator(train_data.generate_data(batch_size=myfitter.gpu_nums),
-                             20 * train_data.files_number // myfitter.gpu_nums, epochs=30, initial_epoch=init_epoch,
-                             callbacks=myfitter.callback_func(),
-                             validation_data=val_data.generate_data(myfitter.gpu_nums,5),
-                             validation_steps=5*val_data.files_number//myfitter.gpu_nums)
+    myfitter = fitter(num_gpus, model_path, save_path, parameters.we_name)
+    h = myfitter.m.fit_generator(generator=train_data.generate_data(batch_size=myfitter.gpu_nums),
+                                 steps_per_epoch=30 * train_data.files_number // myfitter.gpu_nums, epochs=20,
+                                 class_weight=None,
+                                 callbacks=myfitter.callback_func(),
+                                 validation_data=val_data.generate_data(myfitter.gpu_nums, 5),
+                                 validation_steps=5 * val_data.files_number // myfitter.gpu_nums,
+                                 initial_epoch=init_epoch)
     myfitter.save_final()
-    hh=h.history
-    with open('history.json','w') as f:
-        json.dump(hh,f,ensure_ascii=False,indent=2)
+    hh = h.history
+    with open('history.json', 'w') as f:
+        json.dump(hh, f, ensure_ascii=False, indent=2)
 
 
 if __name__ == '__main__':
