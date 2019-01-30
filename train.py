@@ -98,6 +98,8 @@ if __name__ == '__main__':
     pynvml.nvmlShutdown()
     # 模型路径
     model_path = './model/'
+    if not os.path.isdir(model_path):
+        os.mkdir(model_path)
     init_epoch = len(os.listdir(model_path))
     save_path = model_path + 'weight-{epoch:03d}-{val_loss:.4f}.h5'
     #
