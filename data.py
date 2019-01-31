@@ -73,7 +73,7 @@ class dataset():
 
     def generate_data(self, batch_size=1, loop_num_each_data=135, length=160):
         # 读取并返回有值部分的数据
-        z_len = 64
+        z_len0 = 64
         while True:
             xy = self.q.get()
             x, y = xy
@@ -83,19 +83,24 @@ class dataset():
             y0 = np.where(np.sum(y, (1, 2)) > 0)
             up, down = np.max(y0), np.min(y0)
             height = up - down
-            if height < z_len:
+            if height < z_len0:
                 z_len = height - height % 16  # 取离16倍数最近的整数
                 if z_len == 0:
                     continue
             else:
-                z_len = 64
+                z_len = z_len0
             x, y = x[:, :, :, np.newaxis], y[:, :, :, np.newaxis]
 
             # 对每个数据循环
             for __ in range(loop_num_each_data // batch_size):
                 datas = [[], []]
                 for _ in range(batch_size):
-                    start = random.randint(down, up - z_len + 1)
+                    try:
+                        start = random.randint(down, up - z_len + 1)
+                    except ValueError as e:
+                        print(z_len, down, up, height)
+                        print(e)
+                        continue
                     acme = random.randint(0, 512 - length)
                     # print(start,stop)
                     datas[0].append(x[start:start + z_len, acme:acme + length, acme:acme + length])
