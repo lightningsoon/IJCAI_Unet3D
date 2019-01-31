@@ -24,7 +24,7 @@ class ParallelModelCheckpoint(ModelCheckpoint):
 
 def lr_SCH(epochs, lr):
     if epochs <= 2:
-        lr = 0.002
+        lr = 0.008
     elif epochs != 0 and epochs % 3 == 0:
         # 每一新轮开始时,需要重置
         lr = 0.0008
@@ -58,7 +58,7 @@ class fitter():
 
     def callback_func(self):
         # 画图
-        tensor_bd = TensorBoard(batch_size=2 * num_gpus, write_grads=False, write_images=False, histogram_freq=2)
+        tensor_bd = TensorBoard(batch_size=2 * num_gpus, write_graph=False, write_grads=False, write_images=False)
         # 模型保存
         if self.gpu_nums > 1:
             mcp = ParallelModelCheckpoint(self.single_m, self.save_path, period=1)
@@ -85,7 +85,7 @@ def train():
     val_data.run_thread()
     myfitter = fitter(num_gpus, model_path, save_path, parameters.we_name)
     h = myfitter.m.fit_generator(generator=train_data.generate_data(batch_size=myfitter.gpu_nums),
-                                 steps_per_epoch=30 * train_data.files_number // myfitter.gpu_nums, epochs=20,
+                                 steps_per_epoch=20 * train_data.files_number // myfitter.gpu_nums, epochs=30,
                                  class_weight=None,
                                  callbacks=myfitter.callback_func(),
                                  validation_data=val_data.generate_data(myfitter.gpu_nums, 5),
