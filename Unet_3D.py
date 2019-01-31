@@ -57,7 +57,7 @@ def get_unet3D(show=False):
 if __name__ == '__main__':
     get_unet3D(True)
 '''
-Total params: 3,605,353
-Trainable params: 3,603,601
-Non-trainable params: 1,752
+Total params: 64,486,561
+Trainable params: 64,477,777
+Non-trainable params: 8,784
 '''
