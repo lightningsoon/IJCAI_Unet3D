@@ -66,7 +66,7 @@ class fitter():
             mcp = ModelCheckpoint(self.save_path, period=1)
         # 学习率
         lrp = LearningRateScheduler(lr_SCH, 1)
-        return [lrp, mcp,tensor_bd]
+        return [lrp, mcp, tensor_bd]
         pass
 
     def save_final(self):
@@ -78,19 +78,20 @@ class fitter():
 
 def train():
     train_data = dataset(parameters.train_path)
-    #quit()
+    # quit()
     val_data = dataset(parameters.validate_path)
 
     train_data.run_thread()
     val_data.run_thread()
     myfitter = fitter(num_gpus, model_path, save_path, parameters.we_name)
-    h = myfitter.m.fit_generator(generator=train_data.generate_data(batch_size=myfitter.gpu_nums),
-                                 steps_per_epoch=20 * train_data.files_number // myfitter.gpu_nums, epochs=30,
-                                 class_weight=None,
-                                 callbacks=myfitter.callback_func(),
-                                 validation_data=val_data.generate_data(myfitter.gpu_nums, 5),
-                                 validation_steps=5 * val_data.files_number // myfitter.gpu_nums,
-                                 initial_epoch=init_epoch)
+    h = myfitter.m.fit_generator(
+        generator=train_data.generate_data(myfitter.gpu_nums * batch_size, train_times_each_data),
+        steps_per_epoch=train_times_each_data // batch_size * train_data.files_number // myfitter.gpu_nums,
+        epochs=30,
+        callbacks=myfitter.callback_func(),
+        validation_data=val_data.generate_data(myfitter.gpu_nums * batch_size, val_times_each_data),
+        validation_steps=val_times_each_data // batch_size * val_data.files_number // myfitter.gpu_nums,
+        initial_epoch=init_epoch)
     myfitter.save_final()
     hh = h.history
     with open('history.json', 'w') as f:
@@ -109,5 +110,7 @@ if __name__ == '__main__':
     init_epoch = len(os.listdir(model_path))
     save_path = model_path + 'weight-{epoch:03d}-{val_loss:.4f}.h5'
     #
-
+    train_times_each_data = 150
+    val_times_each_data = 45
+    batch_size = 5
     train()

@@ -73,7 +73,6 @@ class dataset():
 
     def generate_data(self, batch_size=1, loop_num_each_data=150, length=64):
         # 读取并返回有值部分的数据
-        batch_size*=15
         while True:
             xy = self.q.get()
             x, y = xy
