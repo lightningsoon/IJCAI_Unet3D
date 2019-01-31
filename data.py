@@ -71,9 +71,9 @@ class dataset():
             # print(y.shape)
             produce_queue.put([x, y])
 
-    def generate_data(self, batch_size=1, loop_num_each_data=20, length=16):
+    def generate_data(self, batch_size=1, loop_num_each_data=150, length=64):
         # 读取并返回有值部分的数据
-
+        batch_size*=15
         while True:
             xy = self.q.get()
             x, y = xy
@@ -85,15 +85,17 @@ class dataset():
             x, y = x[:, :, :, np.newaxis], y[:, :, :, np.newaxis]
             # 对每个数据循环
             for __ in range(loop_num_each_data // batch_size):
-                datas = []
+                datas = [[],[]]
                 #print(x.shape,y.shape)
                 for _ in range(batch_size):
                     start = random.randint(down, up - length + 1)  # 可选择的上界
+                    acme=random.randint(0,512-length)
                     #print(start,down,up)
                     #print(x.shape,y.shape,start,start+16)
-                    datas.append([x[start:start + length], y[start:start + length]])
+
+                    datas[0].append(x[start:start + length,acme:acme+length,acme:acme+length])
+                    datas[1].append(y[start:start + length,acme:acme+length,acme:acme+length])
                 #print(np.array(datas).shape)
-                datas=np.transpose(np.array(datas),(1,0,2,3,4,5))
-                yield datas
+                yield np.array(datas)
 
         pass
