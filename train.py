@@ -24,10 +24,10 @@ class ParallelModelCheckpoint(ModelCheckpoint):
 
 def lr_SCH(epochs, lr):
     if epochs <= 2:
-        lr = 0.008
+        lr = 0.01
     elif epochs != 0 and epochs % 3 == 0:
         # 每一新轮开始时,需要重置
-        lr = 0.0008
+        lr = 0.0016
         # print(lr,type(lr))
     else:
         lr = lr * 0.5
