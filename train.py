@@ -24,10 +24,10 @@ class ParallelModelCheckpoint(ModelCheckpoint):
 
 def lr_SCH(epochs, lr):
     if epochs <= 2:
-        lr = 0.01
-    elif epochs <= 5:
-        lr = 0.005
-    elif epochs != 0 and epochs % 3 == 0:
+        lr = 0.016
+    elif epochs <= 4:
+        lr = 0.002
+    elif epochs != 0 and epochs % 4 == 0:
         # 每一新轮开始时,需要重置
         lr = 0.0016
         # print(lr,type(lr))
@@ -48,13 +48,15 @@ class fitter():
         # 模型
         self.single_m = None
         self.m = Unet_3D.get_unet3D()
-        if os.path.isfile(parameters.we_name):
-            self.m.load_weights(parameters.we_name)
+
         if self.gpu_nums >= 2:
             print('多核')
             self.single_m = self.m
             self.m = multi_gpu_model(self.m, num_gpus)
             pass
+        if os.path.isfile(parameters.we_name):
+            print('载入权重')
+            self.m.load_weights(parameters.we_name)
         self.m.compile(optimizer=Adam(),
                        loss=dice_coef_loss, metrics=[dice_metric])
 
@@ -113,8 +115,8 @@ if __name__ == '__main__':
     save_path = model_path + 'weight-{epoch:03d}-{val_loss:.4f}.h5'
     #
     train_times_each_data = 135
-    val_times_each_data = 45
-    batch_size = 2
-    epoch_scale_factor = 4
-    epochs = 20
+    val_times_each_data = 30
+    batch_size = 1
+    epoch_scale_factor = 10
+    epochs = 10
     train()

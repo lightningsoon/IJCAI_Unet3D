@@ -10,6 +10,7 @@ def dice_coef(y_true, y_pred):
 
 
 def dice_metric(y_true, y_pred):
+    y_true, y_pred = K.cast(y_true, 'float32'), K.cast(y_pred, 'float32')
     y_pred = K.round(y_pred)
     smooth = 0.0001
     intersection = K.sum(y_true * y_pred, [1, 2, 3])

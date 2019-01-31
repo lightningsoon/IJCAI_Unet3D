@@ -71,33 +71,35 @@ class dataset():
             # print(y.shape)
             produce_queue.put([x, y])
 
-    def generate_data(self, batch_size=1, loop_num_each_data=135, length=96):
+    def generate_data(self, batch_size=1, loop_num_each_data=135, length=160):
         # 读取并返回有值部分的数据
+        z_len = 64
         while True:
             xy = self.q.get()
             x, y = xy
             x = preprocess(x).astype(np.float32)
             y = np.clip(y, 0, 1).astype(np.float32)  # 标签有0，1，2
-            # y0 = np.where(np.any(y, (1, 2)) == True)
-            # up, down = np.max(y0), np.min(y0)
+            # 选择适适的z高度
+            y0 = np.where(np.sum(y, (1, 2)) > 0)
+            up, down = np.max(y0), np.min(y0)
+            height = up - down
+            if height < z_len:
+                z_len = height - height % 16  # 取离16倍数最近的整数
+                if z_len == 0:
+                    continue
+            else:
+                z_len = 64
             x, y = x[:, :, :, np.newaxis], y[:, :, :, np.newaxis]
 
             # 对每个数据循环
             for __ in range(loop_num_each_data // batch_size):
                 datas = [[], []]
                 for _ in range(batch_size):
-                    stop = y.shape[0] - length
-                    if stop < 0:
-                        stop = y.shape[0] - 64
-                        start = random.randint(0, stop)
-                        stop = start + 64
-                    else:
-                        start = random.randint(0, stop)
-                        stop = start + length
+                    start = random.randint(down, up - z_len + 1)
                     acme = random.randint(0, 512 - length)
                     # print(start,stop)
-                    datas[0].append(x[start:stop, acme:acme + length, acme:acme + length])
-                    datas[1].append(y[start:stop, acme:acme + length, acme:acme + length])
+                    datas[0].append(x[start:start + z_len, acme:acme + length, acme:acme + length])
+                    datas[1].append(y[start:start + z_len, acme:acme + length, acme:acme + length])
                 # print(np.array(datas).shape)
                 yield np.array(datas)
 
