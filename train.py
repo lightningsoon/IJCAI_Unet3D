@@ -25,6 +25,8 @@ class ParallelModelCheckpoint(ModelCheckpoint):
 def lr_SCH(epochs, lr):
     if epochs <= 2:
         lr = 0.01
+    elif epochs <= 5:
+        lr = 0.005
     elif epochs != 0 and epochs % 3 == 0:
         # 每一新轮开始时,需要重置
         lr = 0.0016
@@ -86,11 +88,11 @@ def train():
     myfitter = fitter(num_gpus, model_path, save_path, parameters.we_name)
     h = myfitter.m.fit_generator(
         generator=train_data.generate_data(myfitter.gpu_nums * batch_size, train_times_each_data),
-        steps_per_epoch=train_times_each_data // batch_size * train_data.files_number // myfitter.gpu_nums,
-        epochs=30,
+        steps_per_epoch=train_times_each_data // batch_size * train_data.files_number // myfitter.gpu_nums // epoch_scale_factor,
+        epochs=epochs * epoch_scale_factor,
         callbacks=myfitter.callback_func(),
         validation_data=val_data.generate_data(myfitter.gpu_nums * batch_size, val_times_each_data),
-        validation_steps=val_times_each_data // batch_size * val_data.files_number // myfitter.gpu_nums,
+        validation_steps=val_times_each_data // batch_size * val_data.files_number // myfitter.gpu_nums // epoch_scale_factor,
         initial_epoch=init_epoch)
     myfitter.save_final()
     hh = h.history
@@ -110,7 +112,9 @@ if __name__ == '__main__':
     init_epoch = len(os.listdir(model_path))
     save_path = model_path + 'weight-{epoch:03d}-{val_loss:.4f}.h5'
     #
-    train_times_each_data = 150
+    train_times_each_data = 135
     val_times_each_data = 45
-    batch_size = 5
+    batch_size = 2
+    epoch_scale_factor = 4
+    epochs = 20
     train()

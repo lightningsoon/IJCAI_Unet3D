@@ -35,8 +35,8 @@ class dataset():
         '''
 
         def sort(x):
-            #print(os.path.basename(x),''.join(list(filter(str.isdigit, os.path.basename(x)))))
-            #print(int(''.join(list(filter(str.isdigit, os.path.basename(x))))))
+            # print(os.path.basename(x),''.join(list(filter(str.isdigit, os.path.basename(x)))))
+            # print(int(''.join(list(filter(str.isdigit, os.path.basename(x))))))
             return int(''.join(list(filter(str.isdigit, os.path.basename(x)))))
 
         file_list_y = glob.glob(os.path.join(self.path, 'segmentation-*.nii'))
@@ -45,7 +45,7 @@ class dataset():
         file_list_x = sorted(file_list_x, key=sort)
         file_list = list(zip(file_list_x, file_list_y))
         self.file_list = file_list
-        #print(file_list)
+        # print(file_list)
         return len(file_list)
         pass
 
@@ -71,30 +71,34 @@ class dataset():
             # print(y.shape)
             produce_queue.put([x, y])
 
-    def generate_data(self, batch_size=1, loop_num_each_data=150, length=64):
+    def generate_data(self, batch_size=1, loop_num_each_data=135, length=96):
         # 读取并返回有值部分的数据
         while True:
             xy = self.q.get()
             x, y = xy
-            y0 = np.where(np.sum(y, (1, 2)) > 0)
-            # print(y0)
-            up, down = np.max(y0), np.min(y0)
             x = preprocess(x).astype(np.float32)
-            y=np.clip(y,0,1).astype(np.float32)#标签有0，1，2
+            y = np.clip(y, 0, 1).astype(np.float32)  # 标签有0，1，2
+            # y0 = np.where(np.any(y, (1, 2)) == True)
+            # up, down = np.max(y0), np.min(y0)
             x, y = x[:, :, :, np.newaxis], y[:, :, :, np.newaxis]
+
             # 对每个数据循环
             for __ in range(loop_num_each_data // batch_size):
-                datas = [[],[]]
-                #print(x.shape,y.shape)
+                datas = [[], []]
                 for _ in range(batch_size):
-                    start = random.randint(down, up - length + 1)  # 可选择的上界
-                    acme=random.randint(0,512-length)
-                    #print(start,down,up)
-                    #print(x.shape,y.shape,start,start+16)
-
-                    datas[0].append(x[start:start + length,acme:acme+length,acme:acme+length])
-                    datas[1].append(y[start:start + length,acme:acme+length,acme:acme+length])
-                #print(np.array(datas).shape)
+                    stop = y.shape[0] - length
+                    if stop < 0:
+                        stop = y.shape[0] - 64
+                        start = random.randint(0, stop)
+                        stop = start + 64
+                    else:
+                        start = random.randint(0, stop)
+                        stop = start + length
+                    acme = random.randint(0, 512 - length)
+                    # print(start,stop)
+                    datas[0].append(x[start:stop, acme:acme + length, acme:acme + length])
+                    datas[1].append(y[start:stop, acme:acme + length, acme:acme + length])
+                # print(np.array(datas).shape)
                 yield np.array(datas)
 
         pass
