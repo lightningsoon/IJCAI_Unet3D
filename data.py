@@ -102,10 +102,18 @@ class dataset():
                         print(e)
                         continue
                     acme = random.randint(0, 512 - length)
+                    y_cuboid = y[start:start + z_len, acme:acme + length, acme:acme + length]
+                    for _ in range(5):
+                        if np.mean(y_cuboid) < 0.10:
+                            acme = random.randint(0, 512 - length)
+                            y_cuboid = y[start:start + z_len, acme:acme + length, acme:acme + length]
+                        else:
+                            break
                     # print(start,stop)
                     datas[0].append(x[start:start + z_len, acme:acme + length, acme:acme + length])
-                    datas[1].append(y[start:start + z_len, acme:acme + length, acme:acme + length])
+                    datas[1].append(y_cuboid)
                 # print(np.array(datas).shape)
-                yield np.array(datas)
+                if len(datas[0]) > 0:
+                    yield np.array(datas)
 
         pass

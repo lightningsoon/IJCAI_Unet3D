@@ -1,4 +1,3 @@
-from keras.applications import ResNet50
 from keras import layers, models
 from keras import backend
 from keras.utils import plot_model

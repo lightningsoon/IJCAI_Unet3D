@@ -119,7 +119,7 @@ if __name__ == '__main__':
     #
     train_times_each_data = 135
     val_times_each_data = 30
-    batch_size = 1
+    batch_size = 2
     epoch_scale_factor = 10
     epochs = 10
     train()
