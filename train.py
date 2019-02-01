@@ -29,7 +29,7 @@ def lr_SCH(epochs, lr):
         lr = 0.002
     elif epochs != 0 and epochs % 4 == 0:
         # 每一新轮开始时,需要重置
-        lr = 0.0016
+        lr = 0.0002
         # print(lr,type(lr))
     else:
         lr = lr * 0.5
@@ -48,16 +48,19 @@ class fitter():
         # 模型
         self.single_m = None
         self.m = Unet_3D.get_unet3D()
-
+        if os.path.isfile(parameters.we_name):
+            print('载入权重')
+            try:
+                self.m.load_weights(parameters.we_name)
+            except Exception as e:
+                print(e)
         if self.gpu_nums >= 2:
             print('多核')
             self.single_m = self.m
-            self.m = multi_gpu_model(self.m, num_gpus)
+            self.m = multi_gpu_model(self.m, self.gpu_nums)
             pass
-        if os.path.isfile(parameters.we_name):
-            print('载入权重')
-            self.m.load_weights(parameters.we_name)
-        self.m.compile(optimizer=Adam(),
+
+        self.m.compile(optimizer=Adam(0.0008),
                        loss=dice_coef_loss, metrics=[dice_metric])
 
     def callback_func(self):
@@ -94,7 +97,7 @@ def train():
         epochs=epochs * epoch_scale_factor,
         callbacks=myfitter.callback_func(),
         validation_data=val_data.generate_data(myfitter.gpu_nums * batch_size, val_times_each_data),
-        validation_steps=val_times_each_data // batch_size * val_data.files_number // myfitter.gpu_nums // epoch_scale_factor,
+        validation_steps=val_times_each_data // batch_size * val_data.files_number // myfitter.gpu_nums,
         initial_epoch=init_epoch)
     myfitter.save_final()
     hh = h.history
