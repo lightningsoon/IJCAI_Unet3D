@@ -50,7 +50,10 @@ class fitter():
         self.m = Unet_3D.get_unet3D()
         if os.path.isfile(parameters.we_name):
             print('载入权重')
-            self.m.load_weights(parameters.we_name)
+            try:
+                self.m.load_weights(parameters.we_name)
+            except Exception as e:
+                print(e)
         if self.gpu_nums >= 2:
             print('多核')
             self.single_m = self.m
@@ -117,6 +120,6 @@ if __name__ == '__main__':
     train_times_each_data = 8
     val_times_each_data = 4
     batch_size = 1
-    epoch_scale_factor = 6
+    epoch_scale_factor = 8
     epochs = 10
     train()
